@@ -161,6 +161,81 @@ const App: React.FC = () => {
   const indexWheelFromPicture =
     extractNumbersBeforeAfterIndex(recognizedText).toString();
 
+  const [values, setValues] = useState<{
+    [key: string]: { id: string; value1: string; value2: string }[];
+  }>({});
+
+  // Fonction pour extraire les valeurs structurées sous forme de tableau pour chaque catégorie
+function extractValues(inputString: string): { [key: string]: { id: string; value1: string; value2: string }[] } {
+  
+  // Fonction générique pour extraire les données d'une section donnée
+  const extractSectionData = (sectionName: string): { id: string; value1: string; value2: string }[] | null => {
+    const sectionIndex = inputString.indexOf(sectionName);
+    if (sectionIndex === -1) return null;
+
+    // On cherche la fin de la section pour "Pavilion" et "Crown"
+    let nextSectionIndex = inputString.indexOf("Crown", sectionIndex + sectionName.length);
+    if (sectionName === "Crown") {
+      nextSectionIndex = inputString.indexOf("Table", sectionIndex + sectionName.length);
+    }
+
+    // Si la fin de la section n'est pas trouvée
+    const endIndex = nextSectionIndex === -1 ? inputString.length : nextSectionIndex;
+
+    // Extraire la sous-chaîne contenant la section
+    const substring = inputString.substring(sectionIndex + sectionName.length, endIndex).trim();
+
+    // Expression régulière pour capturer les groupes d'informations
+    const regex = /(\S+)\s+([A-Za-z0-9.°]+)\s+([A-Za-z0-9-]+)/g;
+    let match;
+    const sectionData: { id: string; value1: string; value2: string }[] = [];
+
+    // Recherche des correspondances dans la sous-chaîne
+    while ((match = regex.exec(substring)) !== null) {
+      // Assigner id, value1 et value2
+      const id = match[1]; // La première valeur (id)
+      const value1 = match[2]; // La valeur avec le format "XX.XX°"
+      const value2 = match[3].replace(/ /g, "-"); // Remplacer les espaces par des tirets dans value2
+
+      sectionData.push({
+        id,
+        value1,
+        value2,
+      });
+    }
+
+    return sectionData;
+  };
+
+  // Extraire les données pour chaque section ("Pavilion", "Crown", etc.)
+  const result: { [key: string]: { id: string; value1: string; value2: string }[] } = {};
+
+  // Sections à extraire
+  const sections = ["Pavilion", "Crown"];
+
+  sections.forEach((section) => {
+    const sectionData = extractSectionData(section);
+    if (sectionData) {
+      result[section.toLowerCase()] = sectionData; // Ajout dans la structure {pavilion: [], crown: []}
+    }
+  });
+
+  return result;
+}
+
+  const handleExtract = () => {
+    // Exemple de chaîne d'entrée (le texte complet fourni)
+    const inputString = parsedTextFromPdf;
+
+    // Extraction des valeurs
+    const extractedValues = extractValues(inputString);
+
+    // Mise à jour de l'état avec les valeurs extraites
+    setValues(extractedValues);
+  };
+
+  console.log(values);
+
   return (
     <div className="App">
       <h1>Index Wheel Faceting Diagrams Converter</h1>
@@ -387,7 +462,15 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
-      {parsedTextFromPdf ? <p>{JSON.stringify(parsedTextFromPdf)}</p> : ""}
+      {parsedTextFromPdf ? (
+        <div>
+          <button onClick={handleExtract}>Extraire les valeurs</button>
+          <pre>{JSON.stringify(values, null, 2)}</pre>{" "}
+          {/* Affichage du résultat formaté en JSON */}
+        </div>
+      ) : (
+        ""
+      )}
     </div>
   );
 };
