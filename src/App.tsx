@@ -166,62 +166,99 @@ const App: React.FC = () => {
   }>({});
 
   // Fonction pour extraire les valeurs structurées sous forme de tableau pour chaque catégorie
-function extractValues(inputString: string): { [key: string]: { id: string; value1: string; value2: string }[] } {
+  function extractValues(inputString: string): { [key: string]: { id: string; value1: string; value2: string }[] } {
+
+    // Fonction générique pour extraire les données d'une section donnée
+    const extractSectionData = (sectionName: string): { id: string; value1: string; value2: string }[] | null => {
+      const sectionIndex = inputString.indexOf(sectionName);
+      if (sectionIndex === -1) return null;
   
-  // Fonction générique pour extraire les données d'une section donnée
-  const extractSectionData = (sectionName: string): { id: string; value1: string; value2: string }[] | null => {
-    const sectionIndex = inputString.indexOf(sectionName);
-    if (sectionIndex === -1) return null;
-
-    // On cherche la fin de la section pour "Pavilion" et "Crown"
-    let nextSectionIndex = inputString.indexOf("Crown", sectionIndex + sectionName.length);
-    if (sectionName === "Crown") {
-      nextSectionIndex = inputString.indexOf("Table", sectionIndex + sectionName.length);
-    }
-
-    // Si la fin de la section n'est pas trouvée
-    const endIndex = nextSectionIndex === -1 ? inputString.length : nextSectionIndex;
-
-    // Extraire la sous-chaîne contenant la section
-    const substring = inputString.substring(sectionIndex + sectionName.length, endIndex).trim();
-
-    // Expression régulière pour capturer les groupes d'informations
-    const regex = /(\S+)\s+([A-Za-z0-9.°]+)\s+([A-Za-z0-9-]+)/g;
-    let match;
-    const sectionData: { id: string; value1: string; value2: string }[] = [];
-
-    // Recherche des correspondances dans la sous-chaîne
-    while ((match = regex.exec(substring)) !== null) {
-      // Assigner id, value1 et value2
-      const id = match[1]; // La première valeur (id)
-      const value1 = match[2]; // La valeur avec le format "XX.XX°"
-      const value2 = match[3].replace(/ /g, "-"); // Remplacer les espaces par des tirets dans value2
-
-      sectionData.push({
-        id,
-        value1,
-        value2,
+      // Extraire la partie de la chaîne après la section nommée (Pavilion, Crown, etc.)
+      const substring = inputString.substring(sectionIndex + sectionName.length).trim();
+  
+      // Expression régulière pour capturer les groupes d'informations
+      const regex = /(\S+)\s+([A-Za-z0-9.°]+)\s+([A-Za-z0-9-]+)/g;
+      let match;
+      const sectionData: { id: string; value1: string; value2: string }[] = [];
+  
+      // Recherche des correspondances dans la sous-chaîne
+      while ((match = regex.exec(substring)) !== null) {
+        // Assigner id, value1 et value2
+        const id = match[1]; // La première valeur (id)
+        const value1 = match[2]; // La valeur avec le format "XX.XX°"
+        const value2 = match[3].replace(/ /g, "-"); // Remplacer les espaces par des tirets dans value2
+  
+        // Si "CAM" est détecté et que value1 contient un "°", on ne l'ajoute pas au tableau
+        if (id === "CAM" && value1.includes("°")) {
+          continue; // Ne pas ajouter cet objet au tableau
+        }
+  
+        // Ajouter l'entrée au tableau
+        sectionData.push({
+          id,
+          value1,
+          value2,
+        });
+      }
+  
+      // Trouver la dernière occurrence de `value1` contenant le signe "°"
+      let lastIndexOfDegree = -1;
+      sectionData.forEach((entry, index) => {
+        if (entry.value1.includes('°')) {
+          lastIndexOfDegree = index;
+        }
       });
-    }
-
-    return sectionData;
-  };
-
-  // Extraire les données pour chaque section ("Pavilion", "Crown", etc.)
-  const result: { [key: string]: { id: string; value1: string; value2: string }[] } = {};
-
-  // Sections à extraire
-  const sections = ["Pavilion", "Crown"];
-
-  sections.forEach((section) => {
-    const sectionData = extractSectionData(section);
-    if (sectionData) {
-      result[section.toLowerCase()] = sectionData; // Ajout dans la structure {pavilion: [], crown: []}
-    }
-  });
-
-  return result;
-}
+  
+      // Si nous avons trouvé une entrée avec "°", ajuster `nextSectionIndex`
+      if (lastIndexOfDegree !== -1) {
+        const lastMatch = sectionData[lastIndexOfDegree];
+        const lastValue1EndIndex = inputString.indexOf(lastMatch.value1) + lastMatch.value1.length;
+        
+        // Utiliser lastValue1EndIndex pour couper la sous-chaîne et extraire les données jusqu'à cette position
+        const endIndex = lastValue1EndIndex;
+        const finalSubstring = inputString.substring(sectionIndex + sectionName.length, endIndex).trim();
+  
+        // Expression régulière pour capturer les groupes d'informations dans la section coupée
+        const finalData: { id: string; value1: string; value2: string }[] = [];
+        const finalRegex = /(\S+)\s+([A-Za-z0-9.°]+)\s+([A-Za-z0-9-]+)/g;
+        let finalMatch;
+        
+        // Recherche des correspondances dans la sous-chaîne coupée
+        while ((finalMatch = finalRegex.exec(finalSubstring)) !== null) {
+          // Assigner id, value1 et value2
+          const id = finalMatch[1]; // La première valeur (id)
+          const value1 = finalMatch[2]; // La valeur avec le format "XX.XX°"
+          const value2 = finalMatch[3].replace(/ /g, "-"); // Remplacer les espaces par des tirets dans value2
+  
+          finalData.push({
+            id,
+            value1,
+            value2,
+          });
+        }
+  
+        return finalData;
+      } else {
+        return null;
+      }
+    };
+  
+    // Extraire les données pour chaque section ("Pavilion", "Crown", etc.)
+    const result: { [key: string]: { id: string; value1: string; value2: string }[] } = {};
+  
+    // Sections à extraire
+    const sections = ["Pavilion", "Crown"];
+  
+    sections.forEach((section) => {
+      const sectionData = extractSectionData(section);
+      if (sectionData) {
+        result[section.toLowerCase()] = sectionData; // Ajout dans la structure {pavilion: [], crown: []}
+      }
+    });
+  
+    return result;
+  }
+  
 
   const handleExtract = () => {
     // Exemple de chaîne d'entrée (le texte complet fourni)
@@ -229,12 +266,14 @@ function extractValues(inputString: string): { [key: string]: { id: string; valu
 
     // Extraction des valeurs
     const extractedValues = extractValues(inputString);
-
+    const filteredCrownValues = extractedValues.crown.filter((res)=> res.value1.includes('°'))
+    const filteredPavilionValues = extractedValues.pavilion
+    console.log("filteredValues",filteredCrownValues, "filteredPavilionValues", filteredPavilionValues);
     // Mise à jour de l'état avec les valeurs extraites
     setValues(extractedValues);
   };
 
-  console.log(values);
+
 
   return (
     <div className="App">
