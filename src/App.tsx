@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import "./App.css";
 import useTextRecognition from "./TextRecognition";
+import PDFParserReact from "./PDFParserReact";
 
 const App: React.FC = () => {
   const [pavillonInputs, setPavillonInputs] = useState<
@@ -15,6 +16,7 @@ const App: React.FC = () => {
   const { recognizedText, isLoading } = useTextRecognition({
     selectedImage: image!,
   });
+  const [parsedTextFromPdf, setParsedTextFromPdf] = useState("");
 
   // Fonction pour gérer l'importation d'image
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -157,16 +159,16 @@ const App: React.FC = () => {
   const indexWheelFromPicture =
     extractNumbersBeforeAfterIndex(recognizedText).toString();
 
-
-    
-
   return (
     <div className="App">
       <h1>Index Wheel Faceting Diagrams Converter</h1>
       {image && (
         <div>
           {isLoading ? (
-            <p>Loading, the app is trying to find the index wheel from the picture...</p>
+            <p>
+              Loading, the app is trying to find the index wheel from the
+              picture...
+            </p>
           ) : (
             <p>
               {containsNumbers(indexWheelFromPicture)
@@ -230,7 +232,7 @@ const App: React.FC = () => {
               Supprimer l'image
             </button>
           </div>
-
+          <PDFParserReact setParsedTextFromPdf={setParsedTextFromPdf} />
           <div className="add-buttons-wrapper">
             {/* Boutons pour ajouter des lignes */}
             <button onClick={addPavillonInputRow}>
@@ -383,6 +385,8 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+      {parsedTextFromPdf ? 
+      <p>{JSON.stringify(parsedTextFromPdf)}</p> : ""}
     </div>
   );
 };
