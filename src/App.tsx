@@ -13,7 +13,7 @@ const App: React.FC = () => {
   const [image, setImage] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState<string | "">(""); // Index de la roue actuelle
   const [desiredIndex, setDesiredIndex] = useState<string | "">(""); // Index de la roue souhaitée
-  const { recognizedText, isLoading } = useTextRecognition({
+  const { recognizedText, isLoading, setRecognizedText } = useTextRecognition({
     selectedImage: image!,
   });
   const [parsedTextFromPdf, setParsedTextFromPdf] = useState("");
@@ -37,6 +37,8 @@ const App: React.FC = () => {
     setCrownInputs([]);
     setCurrentIndex("");
     setDesiredIndex("");
+    setRecognizedText("");
+    setParsedTextFromPdf("");
   };
 
   // Fonction pour ajouter une ligne d'input à la colonne Pavillon
@@ -385,8 +387,7 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
-      {parsedTextFromPdf ? 
-      <p>{JSON.stringify(parsedTextFromPdf)}</p> : ""}
+      {parsedTextFromPdf ? <p>{JSON.stringify(parsedTextFromPdf)}</p> : ""}
     </div>
   );
 };

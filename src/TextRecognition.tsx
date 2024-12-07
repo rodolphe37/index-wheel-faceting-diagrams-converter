@@ -25,7 +25,8 @@ const useTextRecognition = ({ selectedImage }: { selectedImage: string }) => {
   console.log("recognizedText", JSON.stringify(recognizedText));
   return {
     recognizedText,
-    isLoading
+    isLoading,
+    setRecognizedText
   };
 };
 export default useTextRecognition;
