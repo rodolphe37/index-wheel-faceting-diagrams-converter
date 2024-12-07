@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import "./App.css";
+import useTextRecognition from "./TextRecognition";
 
 const App: React.FC = () => {
   const [pavillonInputs, setPavillonInputs] = useState<
@@ -11,6 +12,9 @@ const App: React.FC = () => {
   const [image, setImage] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState<string | "">(""); // Index de la roue actuelle
   const [desiredIndex, setDesiredIndex] = useState<string | "">(""); // Index de la roue souhaitée
+  const { recognizedText, isLoading } = useTextRecognition({
+    selectedImage: image!,
+  });
 
   // Fonction pour gérer l'importation d'image
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,48 +38,38 @@ const App: React.FC = () => {
   };
 
   // Fonction pour ajouter une ligne d'input à la colonne Pavillon
-  const addPavillonInputRow = useCallback(
-    () => {
-      setPavillonInputs([
-        ...pavillonInputs,
-        { facet: "", angle: "", sequence: "" },
-      ]);
-    },
-    [pavillonInputs],
-  )
-  ;
-
+  const addPavillonInputRow = useCallback(() => {
+    setPavillonInputs([
+      ...pavillonInputs,
+      { facet: "", angle: "", sequence: "" },
+    ]);
+  }, [pavillonInputs]);
   // Fonction pour ajouter une ligne d'input à la colonne Crown
-  const addCrownInputRow = useCallback(
-    () => {
-      setCrownInputs([...crownInputs, { facet: "", angle: "", sequence: "" }]);
-    },
-    [crownInputs],
-  )
-  ;
-
+  const addCrownInputRow = useCallback(() => {
+    setCrownInputs([...crownInputs, { facet: "", angle: "", sequence: "" }]);
+  }, [crownInputs]);
   const formatAngle = (value: string) => {
     // Supprimer tous les caractères non numériques et garder seulement les chiffres
     let formattedValue = value.replace(/[^\d]/g, "");
-  
+
     // Ajouter un point décimal après les 2 premiers chiffres si nécessaire
     if (formattedValue.length > 2) {
-      formattedValue = formattedValue.slice(0, 2) + '.' + formattedValue.slice(2, 4);
+      formattedValue =
+        formattedValue.slice(0, 2) + "." + formattedValue.slice(2, 4);
     }
-  
+
     // Limiter à 2 décimales
     if (formattedValue.length > 5) {
       formattedValue = formattedValue.slice(0, 5);
     }
-  
+
     // Ajouter le symbole de degré à la fin
     if (formattedValue.length === 5) {
-      formattedValue += '°';
+      formattedValue += "°";
     }
-  
+
     return formattedValue;
   };
-
 
   // Fonction pour gérer les changements dans les inputs
   // Définir le type de `field` comme étant une union des clés possibles
@@ -116,13 +110,19 @@ const App: React.FC = () => {
     setCrownInputs(updatedCrownInputs);
   };
 
-// Vérifie si la dernière ligne est remplie
-const isLastRowFilled = (inputs: Array<{ facet: string; angle: string; sequence: string }>) => {
-  const lastInput = inputs[inputs.length - 1];
-  if (!lastInput) return false;  // Si la dernière ligne est undefined, retourner false
+  // Vérifie si la dernière ligne est remplie
+  const isLastRowFilled = (
+    inputs: Array<{ facet: string; angle: string; sequence: string }>
+  ) => {
+    const lastInput = inputs[inputs.length - 1];
+    if (!lastInput) return false; // Si la dernière ligne est undefined, retourner false
 
-  return lastInput.facet !== "" && lastInput.angle !== "" && lastInput.sequence !== "";
-};
+    return (
+      lastInput.facet !== "" &&
+      lastInput.angle !== "" &&
+      lastInput.sequence !== ""
+    );
+  };
 
   useEffect(() => {
     // Si la dernière ligne de Pavillon est remplie, ajouter une nouvelle ligne
@@ -135,23 +135,67 @@ const isLastRowFilled = (inputs: Array<{ facet: string; angle: string; sequence:
     }
   }, [pavillonInputs, crownInputs, addCrownInputRow, addPavillonInputRow]);
 
+  const extractNumbersBeforeAfterIndex = (text: string): string[] => {
+    // Expression régulière pour capturer les nombres de 2 ou 3 chiffres avant ou après "index"
+    const regex = /(?:\d{2,3})(?=\s*index)|(?<=index\s*)\d{2,3}/g;
+
+    // Appliquer l'expression régulière sur le texte
+    const matches = text.match(regex);
+
+    // Retourner les valeurs trouvées ou un tableau vide si aucune correspondance
+    return matches ? matches : [];
+  };
+
+  const containsNumbers = (text: string): boolean => {
+    // Expression régulière pour détecter la présence de chiffres
+    const regex = /\d/;
+
+    // Teste si la chaîne contient un ou plusieurs chiffres
+    return regex.test(text);
+  };
+
+  const indexWheelFromPicture =
+    extractNumbersBeforeAfterIndex(recognizedText).toString();
+
+
+    
+
   return (
     <div className="App">
       <h1>Index Wheel Faceting Diagrams Converter</h1>
+      {image && (
+        <div>
+          {isLoading ? (
+            <p>Loading, the app is trying to find the index wheel from the picture...</p>
+          ) : (
+            <p>
+              {containsNumbers(indexWheelFromPicture)
+                ? ""
+                : "The index Wheel is not readable in this picture, sorry."}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Affichage des inputs pour l'index actuel et souhaité si une image est chargée */}
       {image ? (
         <div className="index-inputs-wrapper">
           <div className="index-input">
-            <label className="index-indicator">Index de la roue actuelle:</label>
+            <label className="index-indicator">
+              Index de la roue actuelle:
+            </label>
             <input
               type="text"
-              value={currentIndex}
+              value={
+                indexWheelFromPicture ? indexWheelFromPicture : currentIndex
+              }
               onChange={(e) => setCurrentIndex(e.target.value)}
             />
           </div>
           <div className="index-input">
-            <label className="index-indicator">Index de la roue souhaitée:</label>
+            <label className="index-indicator">
+              Index de la roue souhaitée:
+            </label>
             <input
               type="text"
               value={desiredIndex}
@@ -189,8 +233,12 @@ const isLastRowFilled = (inputs: Array<{ facet: string; angle: string; sequence:
 
           <div className="add-buttons-wrapper">
             {/* Boutons pour ajouter des lignes */}
-            <button onClick={addPavillonInputRow}>Ajouter un paramètre Pavillon</button>
-            <button onClick={addCrownInputRow}>Ajouter un paramètre Crown</button>
+            <button onClick={addPavillonInputRow}>
+              Ajouter un paramètre Pavillon
+            </button>
+            <button onClick={addCrownInputRow}>
+              Ajouter un paramètre Crown
+            </button>
           </div>
 
           <div className="form-wrapper">
@@ -210,7 +258,12 @@ const isLastRowFilled = (inputs: Array<{ facet: string; angle: string; sequence:
                             type="text"
                             value={input.facet}
                             onChange={(e) =>
-                              handleInputChange(index, "facet", e.target.value, "pavillon")
+                              handleInputChange(
+                                index,
+                                "facet",
+                                e.target.value,
+                                "pavillon"
+                              )
                             }
                           />
                         </span>
@@ -221,7 +274,12 @@ const isLastRowFilled = (inputs: Array<{ facet: string; angle: string; sequence:
                             type="text"
                             value={input.angle}
                             onChange={(e) =>
-                              handleInputChange(index, "angle", e.target.value, "pavillon")
+                              handleInputChange(
+                                index,
+                                "angle",
+                                e.target.value,
+                                "pavillon"
+                              )
                             }
                           />
                         </span>
@@ -232,7 +290,12 @@ const isLastRowFilled = (inputs: Array<{ facet: string; angle: string; sequence:
                             type="text"
                             value={input.sequence}
                             onChange={(e) =>
-                              handleInputChange(index, "sequence", e.target.value, "pavillon")
+                              handleInputChange(
+                                index,
+                                "sequence",
+                                e.target.value,
+                                "pavillon"
+                              )
                             }
                           />
                         </span>
@@ -270,7 +333,12 @@ const isLastRowFilled = (inputs: Array<{ facet: string; angle: string; sequence:
                             type="text"
                             value={input.facet}
                             onChange={(e) =>
-                              handleInputChange(index, "facet", e.target.value, "crown")
+                              handleInputChange(
+                                index,
+                                "facet",
+                                e.target.value,
+                                "crown"
+                              )
                             }
                           />
                         </span>
@@ -281,7 +349,12 @@ const isLastRowFilled = (inputs: Array<{ facet: string; angle: string; sequence:
                             type="text"
                             value={input.angle}
                             onChange={(e) =>
-                              handleInputChange(index, "angle", e.target.value, "crown")
+                              handleInputChange(
+                                index,
+                                "angle",
+                                e.target.value,
+                                "crown"
+                              )
                             }
                           />
                         </span>
@@ -292,7 +365,12 @@ const isLastRowFilled = (inputs: Array<{ facet: string; angle: string; sequence:
                             type="text"
                             value={input.sequence}
                             onChange={(e) =>
-                              handleInputChange(index, "sequence", e.target.value, "crown")
+                              handleInputChange(
+                                index,
+                                "sequence",
+                                e.target.value,
+                                "crown"
+                              )
                             }
                           />
                         </span>
