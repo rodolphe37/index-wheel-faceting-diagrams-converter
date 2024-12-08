@@ -290,7 +290,7 @@ const App: React.FC = () => {
         <div className="index-inputs-wrapper">
           <div className="index-input">
             <label className="index-indicator">
-              Index de la roue actuelle:
+              Actual index Wheel:
             </label>
             <input
               type="text"
@@ -302,7 +302,7 @@ const App: React.FC = () => {
           </div>
           <div className="index-input">
             <label className="index-indicator">
-              Index de la roue souhaitée:
+              Index wheel you want:
             </label>
             <input
               type="text"
@@ -336,17 +336,17 @@ const App: React.FC = () => {
               }}
               onClick={removeImage}
             >
-              Supprimer l'image
+              Remove picture
             </button>
           </div>
           <PDFParserReact setParsedTextFromPdf={setParsedTextFromPdf} />
           <div className="add-buttons-wrapper">
             {/* Boutons pour ajouter des lignes */}
             <button onClick={addPavillonInputRow}>
-              Ajouter un paramètre Pavillon
+              Add Pavillon parameters
             </button>
             <button onClick={addCrownInputRow}>
-              Ajouter un paramètre Crown
+              Add Crown parameters
             </button>
           </div>
 
@@ -414,7 +414,7 @@ const App: React.FC = () => {
                           className="remove-button"
                           onClick={() => removePavillonInputRow(index)}
                         >
-                          Supprimer
+                          Erase
                         </button>
                       </div>
                     </div>
@@ -433,7 +433,7 @@ const App: React.FC = () => {
                           className="remove-button"
                           onClick={() => removeCrownInputRow(index)}
                         >
-                          Supprimer
+                          Erase
                         </button>
                         <span className="input-content">
                           <label>Facet Number:</label>
@@ -494,7 +494,7 @@ const App: React.FC = () => {
       )}
       {parsedTextFromPdf ? (
         <div>
-          <button onClick={handleExtract}>Extraire les valeurs</button>
+          <button onClick={handleExtract}>Extract all values</button>
           <pre>{JSON.stringify(values, null, 2)}</pre>{" "}
           {/* Affichage du résultat formaté en JSON */}
         </div>
